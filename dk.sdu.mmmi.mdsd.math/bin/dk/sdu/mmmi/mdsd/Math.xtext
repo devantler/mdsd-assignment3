@@ -1,0 +1,28 @@
+grammar dk.sdu.mmmi.mdsd.Math with org.eclipse.xtext.common.Terminals
+
+generate math "http://www.sdu.dk/mmmi/mdsd/Math"
+
+Model:
+	'program' name=ID
+	variables+=GlobalVariable*;
+
+GlobalVariable returns Variable:
+	{GlobalVariable} 'var' name=ID '=' expression=AdditionAndSubtractionExpression;
+
+LocalVariable returns Variable:
+	{LocalVariable} 'let' name=ID '=' local_expression=AdditionAndSubtractionExpression 'in'
+	expression=AdditionAndSubtractionExpression 'end';
+
+AdditionAndSubtractionExpression returns Expression:
+	MultiplicationAndDivisionExpression (({Plus.left=current} '+' | {Minus.left=current} '-')
+	right=MultiplicationAndDivisionExpression)*;
+
+MultiplicationAndDivisionExpression returns Expression:
+	ValueExpression (({Multiplication.left=current} '*' | {Division.left=current} '/') right=ValueExpression)*;
+
+ValueExpression returns Expression:
+	{Parenthesis} '(' parenthesizedExpression=AdditionAndSubtractionExpression ')' | {Number} value=INT | LocalVariable
+	| VariableReference;
+
+VariableReference:
+	variable=[Variable];
