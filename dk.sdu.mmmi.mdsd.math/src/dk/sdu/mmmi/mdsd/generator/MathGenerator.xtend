@@ -11,6 +11,7 @@ import dk.sdu.mmmi.mdsd.math.Minus
 import dk.sdu.mmmi.mdsd.math.Multiplication
 import dk.sdu.mmmi.mdsd.math.Division
 import dk.sdu.mmmi.mdsd.math.Parenthesis
+import dk.sdu.mmmi.mdsd.math.Number
 import java.util.Map
 import java.util.HashMap
 
@@ -57,7 +58,7 @@ class MathGenerator extends AbstractGenerator {
 			Division:
 				expression.left.compileExp(localVariables) + ' / ' + expression.right.compileExp(localVariables)
 			Number:
-				expression.value
+				expression.value.toString
 			Parenthesis:
 				expression.parenthesizedExpression.compileExp(localVariables)
 		}
