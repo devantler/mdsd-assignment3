@@ -2,7 +2,6 @@ package dk.sdu.mmmi.mdsd.generator
 
 import dk.sdu.mmmi.mdsd.math.Division
 import dk.sdu.mmmi.mdsd.math.Expression
-import dk.sdu.mmmi.mdsd.math.ExternalDefinition
 import dk.sdu.mmmi.mdsd.math.GlobalVariable
 import dk.sdu.mmmi.mdsd.math.LocalVariable
 import dk.sdu.mmmi.mdsd.math.Minus
@@ -19,8 +18,6 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
-import dk.sdu.mmmi.mdsd.math.SqrtExternalDefinition
-import dk.sdu.mmmi.mdsd.math.PowExternalDefinition
 import dk.sdu.mmmi.mdsd.math.External
 import dk.sdu.mmmi.mdsd.math.PiExternal
 import dk.sdu.mmmi.mdsd.math.SqrtExternal
@@ -53,7 +50,7 @@ class MathGenerator extends AbstractGenerator {
 				
 				public interface External {
 					«FOR externalDefinition:model.externalDefinitions»
-						«generateExternalDefinition(externalDefinition)»
+						«generateExternalDefinition(externalDefinition.external)»
 					«ENDFOR»
 				}
 
@@ -66,13 +63,13 @@ class MathGenerator extends AbstractGenerator {
 		} 
 	'''
 
-	protected def static CharSequence generateExternalDefinition(ExternalDefinition externalDefinition) {
-		val parameters = switch externalDefinition {
-			SqrtExternalDefinition: externalDefinition.param1 + " n"
-			PowExternalDefinition: externalDefinition.param1 + " n1, " + externalDefinition.param2 + " n2"
+	protected def static CharSequence generateExternalDefinition(External external) {
+		val parameters = switch external {
+			SqrtExternal: external.param1.type + " n"
+			PowExternal: external.param1.type + " n, " + external.param2.type + " m"
 			default: ""
 		}
-		'''public int «externalDefinition.name»(«parameters»);'''
+		'''public int «external.name»(«parameters»);'''
 	}
 
 	def static String compile(GlobalVariable globalVariable) {

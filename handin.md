@@ -13,6 +13,10 @@ OBS! I could not make Externals work without adding parenthesis to the DSL code 
 ## My grammar language
 
 ```prolog
+grammar dk.sdu.mmmi.mdsd.Math with org.eclipse.xtext.common.Terminals
+
+generate math "http://www.sdu.dk/mmmi/mdsd/Math"
+
 Model:
 	'program' name=ID
 	externalDefinitions+=ExternalDefinition*
@@ -36,40 +40,27 @@ ValueExpression returns Expression:
 	{Parenthesis} '(' parenthesizedExpression=AdditionAndSubtractionExpression ')' | {Number} value=INT | LocalVariable
 	| VariableReference | External;
 
+ExternalValue returns Expression:
+	ValueExpression | type='int'
+;
+
 VariableReference:
 	variable=[Variable];
 
 ExternalDefinition:
-	'external' (PiExternalDefinition | SqrtExternalDefinition | PowExternalDefinition)
-;
-
-PiExternalDefinition returns ExternalDefinition:
-	{PiExternalDefinition} name='pi''()'
-;
-
-SqrtExternalDefinition  returns ExternalDefinition:
-	{SqrtExternalDefinition} name='sqrt''('param1='int'')'
-;
-
-PowExternalDefinition returns ExternalDefinition:
-	{PowExternalDefinition} name='pow''('param1='int'','param2='int'')'
-;
+	'external' external=(PiExternal | SqrtExternal | PowExternal);
 
 External:
-	PiExternal | SqrtExternal | PowExternal
-;
+	PiExternal | SqrtExternal | PowExternal;
 
 PiExternal returns External:
-	{PiExternal} name='pi''()'
-;
+	{PiExternal} name='pi' '()';
 
 SqrtExternal returns External:
-	{SqrtExternal} name='sqrt''('param1=ValueExpression')'
-;
+	{SqrtExternal} name='sqrt' '(' param1=ExternalValue ')';
 
 PowExternal returns External:
-	{PowExternal} name='pow''('param1=ValueExpression','param2=ValueExpression')'
-;
+	{PowExternal} name='pow' '(' param1=ExternalValue ',' param2=ExternalValue ')';
 ```
 
 ## My generator
