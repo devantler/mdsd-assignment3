@@ -15,8 +15,6 @@ import dk.sdu.mmmi.mdsd.math.MathPackage.Literals
  * See https://www.eclipse.org/Xtext/documentation/303_runtime_concepts.html#validation
  */
 class MathValidator extends AbstractMathValidator {
-	
-
 	@Check
 	def noRepeatedGlobalVariablwes(GlobalVariable globalVariable) {
 		val model = EcoreUtil2.getRootContainer(globalVariable) as Model;
@@ -31,5 +29,4 @@ class MathValidator extends AbstractMathValidator {
 			error("Multiple global variables cannot share the same name.", globalVariable, Literals.VARIABLE__NAME)
 		}
 	}
-	
 }

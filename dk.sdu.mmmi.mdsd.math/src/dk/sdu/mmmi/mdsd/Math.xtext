@@ -4,6 +4,7 @@ generate math "http://www.sdu.dk/mmmi/mdsd/Math"
 
 Model:
 	'program' name=ID
+	externalDefinitions+=ExternalDefinition*
 	variables+=GlobalVariable*;
 
 GlobalVariable returns Variable:
@@ -22,7 +23,39 @@ MultiplicationAndDivisionExpression returns Expression:
 
 ValueExpression returns Expression:
 	{Parenthesis} '(' parenthesizedExpression=AdditionAndSubtractionExpression ')' | {Number} value=INT | LocalVariable
-	| VariableReference;
+	| VariableReference | External;
 
 VariableReference:
 	variable=[Variable];
+
+ExternalDefinition:
+	'external' (PiExternalDefinition | SqrtExternalDefinition | PowExternalDefinition)
+;
+
+PiExternalDefinition returns ExternalDefinition:
+	{PiExternalDefinition} name='pi''()'
+;
+
+SqrtExternalDefinition  returns ExternalDefinition:
+	{SqrtExternalDefinition} name='sqrt''('param1='int'')'
+;
+
+PowExternalDefinition returns ExternalDefinition:
+	{PowExternalDefinition} name='pow''('param1='int'','param2='int'')'
+;
+
+External:
+	PiExternal | SqrtExternal | PowExternal
+;
+
+PiExternal returns External:
+	{PiExternal} name='pi''()'
+;
+
+SqrtExternal returns External:
+	{SqrtExternal} name='sqrt''('param1=ValueExpression')'
+;
+
+PowExternal returns External:
+	{PowExternal} name='pow''('param1=ValueExpression','param2=ValueExpression')'
+;

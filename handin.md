@@ -1,120 +1,230 @@
-# Assigment 02 — Nikolai Emil Damm
+# Assigment 03 — Nikolai Emil Damm
 
 ## My code
 
-[GitHub — devantler/mdsd-assignment02](https://github.com/devantler/mdsd-assignment2)
+[GitHub — devantler/mdsd-assignment03](https://github.com/devantler/mdsd-assignment3)
 
 ## Assignment status
 
-I have solved the assignment such that all tests pass. I have also tested that the solution works in practice.
+I have solved the assignment such that all tests pass by utilizing my own version of Assignment 2 as the base.
 
-I have not implemented hovering.
+OBS! I could not make Externals work without adding parenthesis to the DSL code for External parameters in `Test31.math` and `Test34.math`. I know this happens because my `ValueExpression` does not allow expressions without parameters, and adding that to my grammar rules gave me left-hand recursion errors.
 
 ## My grammar language
 
-```
+```prolog
 Model:
+	'program' name=ID
+	externalDefinitions+=ExternalDefinition*
 	variables+=GlobalVariable*;
 
 GlobalVariable returns Variable:
-	{GlobalVariable}'var' name=ID '=' expression=AdditionExpression;
-	
+	{GlobalVariable} 'var' name=ID '=' expression=AdditionAndSubtractionExpression;
+
 LocalVariable returns Variable:
-	{LocalVariable}'let' name=ID '=' local_expression=AdditionExpression 'in' expression=AdditionExpression 'end';
+	{LocalVariable} 'let' name=ID '=' local_expression=AdditionAndSubtractionExpression 'in'
+	expression=AdditionAndSubtractionExpression 'end';
 
-AdditionExpression returns Expression:
-	SubtractionExpression ({AdditionExpression.left=current} '+' right=SubtractionExpression)*;
+AdditionAndSubtractionExpression returns Expression:
+	MultiplicationAndDivisionExpression (({Plus.left=current} '+' | {Minus.left=current} '-')
+	right=MultiplicationAndDivisionExpression)*;
 
-SubtractionExpression returns Expression:
-	MultiplicationExpression ({SubtractionExpression.left=current} '-' right=MultiplicationExpression)*;
+MultiplicationAndDivisionExpression returns Expression:
+	ValueExpression (({Multiplication.left=current} '*' | {Division.left=current} '/') right=ValueExpression)*;
 
-MultiplicationExpression returns Expression:
-	DivisionExpression ({MultiplicationExpression.left=current} '*' right=DivisionExpression)*;
-
-DivisionExpression returns Expression:
-	ExpressionValue ({DivisionExpression.left=current} '/' right=ExpressionValue)*;
-
-ExpressionValue returns Expression:
-	ParenthisizedExpression | Number | LocalVariable | VariableReference;
-
-ParenthisizedExpression returns Expression:
-	'(' AdditionExpression ')';
-
-Number:
-	value=INT;
+ValueExpression returns Expression:
+	{Parenthesis} '(' parenthesizedExpression=AdditionAndSubtractionExpression ')' | {Number} value=INT | LocalVariable
+	| VariableReference | External;
 
 VariableReference:
 	variable=[Variable];
+
+ExternalDefinition:
+	'external' (PiExternalDefinition | SqrtExternalDefinition | PowExternalDefinition)
+;
+
+PiExternalDefinition returns ExternalDefinition:
+	{PiExternalDefinition} name='pi''()'
+;
+
+SqrtExternalDefinition  returns ExternalDefinition:
+	{SqrtExternalDefinition} name='sqrt''('param1='int'')'
+;
+
+PowExternalDefinition returns ExternalDefinition:
+	{PowExternalDefinition} name='pow''('param1='int'','param2='int'')'
+;
+
+External:
+	PiExternal | SqrtExternal | PowExternal
+;
+
+PiExternal returns External:
+	{PiExternal} name='pi''()'
+;
+
+SqrtExternal returns External:
+	{SqrtExternal} name='sqrt''('param1=ValueExpression')'
+;
+
+PowExternal returns External:
+	{PowExternal} name='pow''('param1=ValueExpression','param2=ValueExpression')'
+;
 ```
 
 ## My generator
 
-```
+```java
 class MathGenerator extends AbstractGenerator {
 
-	static Map<String, Integer> variables
+	static Map<String, String> variables = new HashMap;
 
-	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
-		val model = resource.allContents.filter(Model).next
-		val result = model.compute
-
-		result.displayPanel
+	override doGenerate(Resource input, IFileSystemAccess2 fsa, IGeneratorContext context) {
+		val model = input.allContents.filter(Model).next
+		fsa.generateFile("math_expression/" + model.name + ".java", model.compile())
 	}
 
-	def static compute(Model model) {
-		variables = new HashMap()
-		for (variable : model.variables) {
-			val localVariables = new HashMap<String, Integer>();
-			variables.put(variable.name, variable.expression.computeExp(localVariables))
+	def static String compile(Model model) '''
+		package math_expression;
+		
+		public class «model.name» {
+			
+			«FOR globalVariable : model.variables.filter[it instanceof GlobalVariable]»
+				public int «globalVariable.name»;
+
+			«ENDFOR»
+			«IF !model.externalDefinitions.isNullOrEmpty»
+				private External external;
+				
+				public «model.name»(External external) {
+				    this.external = external;
+				}
+				
+				public interface External {
+					«FOR externalDefinition:model.externalDefinitions»
+						«generateExternalDefinition(externalDefinition)»
+					«ENDFOR»
+				}
+
+		«ENDIF»
+			public void compute() {
+			«FOR variable : model.variables»
+			«"	"»«variable.name» = «(variable as GlobalVariable).compile»;
+			«ENDFOR»
+			}
+		} 
+	'''
+
+	protected def static CharSequence generateExternalDefinition(ExternalDefinition externalDefinition) {
+		val parameters = switch externalDefinition {
+			SqrtExternalDefinition: externalDefinition.param1 + " n"
+			PowExternalDefinition: externalDefinition.param1 + " n1, " + externalDefinition.param2 + " n2"
+			default: ""
 		}
-		return variables
+		'''public int «externalDefinition.name»(«parameters»);'''
 	}
 
-	def dispatch static int computeExp(AdditionExpression expression, Map<String, Integer> localVariables) {
-		expression.left.computeExp(localVariables) + expression.right.computeExp(localVariables)
+	def static String compile(GlobalVariable globalVariable) {
+		val expressionValue = globalVariable.expression.compileExp(new HashMap)
+		variables.put(globalVariable.name, expressionValue)
+		return variables.get(globalVariable.name)
 	}
 
-	def dispatch static int computeExp(SubtractionExpression expression, Map<String, Integer> localVariables) {
-		expression.left.computeExp(localVariables) - expression.right.computeExp(localVariables)
+	def static dispatch String compileExp(Expression expression, Map<String, String> localVariables) {
+		switch expression {
+			Plus:
+				expression.left.compileExp(localVariables) + ' + ' + expression.right.compileExp(localVariables)
+			Minus:
+				expression.left.compileExp(localVariables) + ' - ' + expression.right.compileExp(localVariables)
+			Multiplication:
+				expression.left.compileExp(localVariables) + ' * ' + expression.right.compileExp(localVariables)
+			Division:
+				expression.left.compileExp(localVariables) + ' / ' + expression.right.compileExp(localVariables)
+			Number:
+				expression.value.toString
+			Parenthesis:
+				'(' + expression.parenthesizedExpression.compileExp(localVariables) + ')'
+		}
 	}
 
-	def dispatch static int computeExp(MultiplicationExpression expression, Map<String, Integer> localVariables) {
-		expression.left.computeExp(localVariables) * expression.right.computeExp(localVariables)
-	}
-
-	def dispatch static int computeExp(DivisionExpression expression, Map<String, Integer> localVariables) {
-		expression.left.computeExp(localVariables) / expression.right.computeExp(localVariables)
-	}
-
-	def dispatch static int computeExp(Number number, Map<String, Integer> localVariables) {
-		number.value
+	def dispatch static String compileExp(External external, Map<String, String> localVariable){
+		var result = 'this.external.'
+		switch external {
+		 	PiExternal: return result + external.name + '()'
+		 	SqrtExternal: return result + external.name + '(' + external.param1.compileExp(localVariable) + ')'
+			PowExternal: return result + external.name + '(' + external.param1.compileExp(localVariable) + ', ' + external.param2.compileExp(localVariable) + ')'
+		}
 	}
 	
-	def dispatch static int computeExp(Variable variable, Map<String, Integer> localVariables){
+	def dispatch static String compileExp(Variable variable, Map<String, String> localVariables) {
 		val nestedVariables = new HashMap(localVariables);
-		if(variable instanceof LocalVariable){
-			nestedVariables.put(variable.name, variable.local_expression.computeExp(nestedVariables))
+		if (variable instanceof LocalVariable) {
+			nestedVariables.put(variable.name, variable.local_expression.compileExp(nestedVariables))
 		}
-		variable.expression.computeExp(nestedVariables)
+		variable.expression.compileExp(nestedVariables)
 	}
 
-	def dispatch static int computeExp(VariableReference reference, Map<String, Integer> localVariables) {
+	def dispatch static String compileExp(VariableReference reference, Map<String, String> localVariables) {
 		val globalVariable = variables.get(reference.variable.name)
 		val localVariable = localVariables.get(reference.variable.name)
-		if (reference.variable instanceof LocalVariable) {
-			return localVariable !== null ? localVariable : globalVariable
-		} else {
-			return globalVariable !== null ? globalVariable : reference.variable.computeExp(localVariables)
+		switch reference.variable {
+			LocalVariable:
+				localVariable !== null ? '(' + localVariable + ')' : '(' + globalVariable + ')'
+			GlobalVariable:
+				globalVariable !== null
+					? '(' + globalVariable + ')'
+					: '(' + reference.variable.compileExp(localVariables) + ')'
+		}
+	}
+}
+```
+
+## My Scope Provider
+
+```java
+class MathScopeProvider extends AbstractMathScopeProvider {
+
+	override IScope getScope(EObject context, EReference reference) {
+		switch (reference) {
+			case Literals.VARIABLE_REFERENCE__VARIABLE: context.getVariableScope(true)
+			default: super.getScope(context, reference)
 		}
 	}
 
-	def void displayPanel(Map<String, Integer> result) {
-		var resultString = ""
-		for (entry : result.entrySet()) {
-			resultString += "var " + entry.getKey() + " = " + entry.getValue() + "\n"
+	def IScope getVariableScope(EObject object, boolean first) {
+		val nextVariable = first ? EcoreUtil2.getContainerOfType(object, Variable) : EcoreUtil2.getContainerOfType(object.eContainer, Variable);
+		if (nextVariable instanceof LocalVariable) {
+			return Scopes.scopeFor(#[nextVariable], nextVariable.getVariableScope(false));
+		} else {
+			return (nextVariable as GlobalVariable).getGlobalVariableScope;
 		}
+	}
 
-		JOptionPane.showMessageDialog(null, resultString, "Math Language", JOptionPane.INFORMATION_MESSAGE)
+	def IScope getGlobalVariableScope(GlobalVariable globalVariable) {
+		val model = EcoreUtil2.getRootContainer(globalVariable) as Model;
+		val globalVariables = model.variables.filter[it.name !== globalVariable.name].toList;
+		return Scopes.scopeFor(globalVariables)
+	}
+}
+```
+
+## My Validator
+
+```java
+class MathValidator extends AbstractMathValidator {
+	@Check
+	def noRepeatedGlobalVariablwes(GlobalVariable globalVariable) {
+		val model = EcoreUtil2.getRootContainer(globalVariable) as Model;
+		val globalVariables = model.variables;
+		var occurences = 0;
+		for (gv : globalVariables) {
+			if(gv.name == globalVariable.name){
+				occurences++;
+			}
+		}
+		if(occurences > 1){
+			error("Multiple global variables cannot share the same name.", globalVariable, Literals.VARIABLE__NAME)
+		}
 	}
 }
 ```

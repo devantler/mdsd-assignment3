@@ -8,6 +8,7 @@
       fileExtensions="math" ecorePackage="Math.ecore#/">
     <genClasses ecoreClass="Math.ecore#//Model">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Math.ecore#//Model/name"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference Math.ecore#//Model/externalDefinitions"/>
       <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference Math.ecore#//Model/variables"/>
     </genClasses>
     <genClasses ecoreClass="Math.ecore#//Variable">
@@ -17,6 +18,12 @@
     <genClasses ecoreClass="Math.ecore#//Expression"/>
     <genClasses ecoreClass="Math.ecore#//VariableReference">
       <genFeatures notify="false" createChild="false" propertySortChoices="true" ecoreFeature="ecore:EReference Math.ecore#//VariableReference/variable"/>
+    </genClasses>
+    <genClasses ecoreClass="Math.ecore#//ExternalDefinition">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Math.ecore#//ExternalDefinition/name"/>
+    </genClasses>
+    <genClasses ecoreClass="Math.ecore#//External">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Math.ecore#//External/name"/>
     </genClasses>
     <genClasses ecoreClass="Math.ecore#//GlobalVariable"/>
     <genClasses ecoreClass="Math.ecore#//LocalVariable">
@@ -43,6 +50,22 @@
     </genClasses>
     <genClasses ecoreClass="Math.ecore#//Number">
       <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Math.ecore#//Number/value"/>
+    </genClasses>
+    <genClasses ecoreClass="Math.ecore#//PiExternalDefinition"/>
+    <genClasses ecoreClass="Math.ecore#//SqrtExternalDefinition">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Math.ecore#//SqrtExternalDefinition/param1"/>
+    </genClasses>
+    <genClasses ecoreClass="Math.ecore#//PowExternalDefinition">
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Math.ecore#//PowExternalDefinition/param1"/>
+      <genFeatures createChild="false" ecoreFeature="ecore:EAttribute Math.ecore#//PowExternalDefinition/param2"/>
+    </genClasses>
+    <genClasses ecoreClass="Math.ecore#//PiExternal"/>
+    <genClasses ecoreClass="Math.ecore#//SqrtExternal">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference Math.ecore#//SqrtExternal/param1"/>
+    </genClasses>
+    <genClasses ecoreClass="Math.ecore#//PowExternal">
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference Math.ecore#//PowExternal/param1"/>
+      <genFeatures property="None" children="true" createChild="true" ecoreFeature="ecore:EReference Math.ecore#//PowExternal/param2"/>
     </genClasses>
   </genPackages>
 </genmodel:GenModel>
