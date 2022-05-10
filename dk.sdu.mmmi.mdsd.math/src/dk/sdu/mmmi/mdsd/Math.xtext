@@ -25,15 +25,23 @@ ValueExpression returns Expression:
 	{Parenthesis} '(' parenthesizedExpression=AdditionAndSubtractionExpression ')' | {Number} value=INT | LocalVariable
 	| VariableReference | External;
 
-ExternalValue returns Expression:
-	ValueExpression | type='int'
-;
-
 VariableReference:
 	variable=[Variable];
 
 ExternalDefinition:
-	'external' external=(PiExternal | SqrtExternal | PowExternal);
+	PiExternalDefinition | SqrtExternalDefinition | PowExternalDefinition;
+
+PiExternalDefinition returns ExternalDefinition:
+	'external' {PiExternalDefinition} name='pi' '()'
+;
+
+SqrtExternalDefinition returns ExternalDefinition:
+	'external' {SqrtExternalDefinition} name='sqrt' '(' type='int' ')'
+;
+
+PowExternalDefinition returns ExternalDefinition:
+	'external' {PowExternalDefinition} name='pow' '(' type1='int' ',' type2='int' ')'
+;
 
 External:
 	PiExternal | SqrtExternal | PowExternal;
@@ -42,8 +50,8 @@ PiExternal returns External:
 	{PiExternal} name='pi' '()';
 
 SqrtExternal returns External:
-	{SqrtExternal} name='sqrt' '(' param1=ExternalValue ')';
+	{SqrtExternal} name='sqrt' '(' param1=AdditionAndSubtractionExpression ')';
 
 PowExternal returns External:
-	{PowExternal} name='pow' '(' param1=ExternalValue ',' param2=ExternalValue ')';
+	{PowExternal} name='pow' '(' param1=AdditionAndSubtractionExpression ',' param2=AdditionAndSubtractionExpression ')';
 	

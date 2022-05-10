@@ -22,6 +22,9 @@ import dk.sdu.mmmi.mdsd.math.External
 import dk.sdu.mmmi.mdsd.math.PiExternal
 import dk.sdu.mmmi.mdsd.math.SqrtExternal
 import dk.sdu.mmmi.mdsd.math.PowExternal
+import dk.sdu.mmmi.mdsd.math.ExternalDefinition
+import dk.sdu.mmmi.mdsd.math.SqrtExternalDefinition
+import dk.sdu.mmmi.mdsd.math.PowExternalDefinition
 
 class MathGenerator extends AbstractGenerator {
 
@@ -50,7 +53,7 @@ class MathGenerator extends AbstractGenerator {
 				
 				public interface External {
 					«FOR externalDefinition:model.externalDefinitions»
-						«generateExternalDefinition(externalDefinition.external)»
+						«generateExternalDefinition(externalDefinition)»
 					«ENDFOR»
 				}
 
@@ -63,13 +66,13 @@ class MathGenerator extends AbstractGenerator {
 		} 
 	'''
 
-	protected def static CharSequence generateExternalDefinition(External external) {
-		val parameters = switch external {
-			SqrtExternal: external.param1.type + " n"
-			PowExternal: external.param1.type + " n, " + external.param2.type + " m"
+	protected def static CharSequence generateExternalDefinition(ExternalDefinition externalDefinition) {
+		val parameters = switch externalDefinition {
+			SqrtExternalDefinition: externalDefinition.type + " n"
+			PowExternalDefinition: externalDefinition.type1 + " n, " + externalDefinition.type2 + " m"
 			default: ""
 		}
-		'''public int «external.name»(«parameters»);'''
+		'''public int «externalDefinition.name»(«parameters»);'''
 	}
 
 	def static String compile(GlobalVariable globalVariable) {
